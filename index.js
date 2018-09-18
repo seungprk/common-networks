@@ -1,6 +1,7 @@
 /* eslint no-plusplus: 0, no-console: 0 */
 const fs = require('fs');
 const path = require('path');
+const minimatch = require('minimatch');
 
 const options = {};
 
@@ -18,7 +19,7 @@ const listFile = (filePath) => {
     console.log(filePath);
     listFile(symPath);
   } else {
-    if (!filePath.match(options.name)) return; // Regex check
+    if (!minimatch(filePath, options.name, { matchBase: true })) return; // Regex check
     if (options.empty && stats.size > 0) return; // empty check
     console.log(filePath);
   }
