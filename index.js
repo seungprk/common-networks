@@ -4,21 +4,24 @@ const path = require('path');
 
 const options = {};
 
-const listDirectories = (directory) => {
-  const files = fs.readdirSync(directory);
-  files.forEach((file) => {
-    const filePath = path.join(directory, file);
-    const stats = fs.lstatSync(filePath);
+const listFile = (filePath) => {
+  const stats = fs.lstatSync(filePath);
 
-    if (stats.isDirectory()) {
-      const innerPath = path.join(directory, file);
-      listDirectories(innerPath);
-    } else {
-      if (!file.match(options.name)) return; // Regex check
-      if (options.empty && stats.size > 0) return; // empty check
-      console.log(filePath);
-    }
-  });
+  if (stats.isDirectory()) {
+    const files = fs.readdirSync(filePath);
+    files.forEach((file) => {
+      const innerPath = path.join(filePath, file);
+      listFile(innerPath);
+    });
+  } else if (options.symlink && stats.isSymbolicLink()) {
+    const symPath = fs.realpathSync(filePath);
+    console.log(filePath);
+    listFile(symPath);
+  } else {
+    if (!filePath.match(options.name)) return; // Regex check
+    if (options.empty && stats.size > 0) return; // empty check
+    console.log(filePath);
+  }
 };
 
 const handleOptions = (arg, index) => {
@@ -47,11 +50,11 @@ for (let i = 2; i < process.argv.length; i++) {
     const skips = handleOptions(arg, i);
     i += skips;
   } else {
-    const directory = path.resolve(__dirname, arg);
-    listDirectories(directory);
+    const filePath = path.resolve(__dirname, arg);
+    listFile(filePath);
     process.exit();
   }
 }
 
 // If no directory given
-listDirectories(__dirname);
+listFile(__dirname);
