@@ -5,24 +5,24 @@ const minimatch = require('minimatch');
 
 const options = {};
 
-const listFile = (filePath) => {
+const listFile = (filePath, origPath) => {
   const stats = fs.lstatSync(filePath);
 
   if (stats.isDirectory()) {
     const files = fs.readdirSync(filePath);
     files.forEach((file) => {
       const innerPath = path.join(filePath, file);
-      listFile(innerPath);
+      listFile(innerPath, origPath);
     });
   } else if (options.symlink && stats.isSymbolicLink()) {
     const symPath = fs.realpathSync(filePath);
-    console.log(filePath);
-    listFile(symPath);
-  } else {
-    if (!minimatch(filePath, options.name, { matchBase: true })) return; // Regex check
-    if (options.empty && stats.size > 0) return; // empty check
-    console.log(filePath);
+    console.log(`${origPath}/${path.relative(origPath, filePath)}`);
+    listFile(symPath, origPath);
   }
+
+  if (options.name && !minimatch(filePath, options.name, { matchBase: true })) return;
+  if (options.empty && stats.size > 0) return; // empty check
+  console.log(`${origPath}/${path.relative(origPath, filePath)}`);
 };
 
 const handleOptions = (arg, index) => {
@@ -30,12 +30,10 @@ const handleOptions = (arg, index) => {
     options.name = process.argv[index + 1];
     return 1;
   }
-
   if (arg === '-L') {
     options.symlink = true;
     return 0;
   }
-
   if (arg === '-empty') {
     options.empty = true;
     return 0;
@@ -52,10 +50,10 @@ for (let i = 2; i < process.argv.length; i++) {
     i += skips;
   } else {
     const filePath = path.resolve(__dirname, arg);
-    listFile(filePath);
+    listFile(filePath, arg);
     process.exit();
   }
 }
 
 // If no directory given
-listFile(__dirname);
+listFile(__dirname, __dirname);
