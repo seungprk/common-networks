@@ -15,4 +15,11 @@ const listDirectories = (directory) => {
   });
 };
 
-listDirectories(__dirname);
+// If no expressions given
+if (process.argv.length <= 2) {
+  listDirectories(__dirname);
+  process.exit();
+}
+
+const directory = path.resolve(__dirname, process.argv[2]);
+listDirectories(directory);
